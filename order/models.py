@@ -18,7 +18,9 @@ class Order(models.Model):
     store = models.ForeignKey(
         Store,
         on_delete=models.CASCADE,
-        related_name='orders'
+        related_name='orders',
+        null=True,
+        blank=True
     )
     status = models.CharField(
         max_length=20,

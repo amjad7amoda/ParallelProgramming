@@ -34,7 +34,7 @@ class CartItemModelTest(TestCase):
             password='password',
             role='CUSTOMER'
         )
-        cart = Cart.objects.create(user=customer)
+        cart = Cart.objects.get(user=customer)
         item = CartItem.objects.create(cart=cart, product=product, quantity=2)
         self.assertEqual(item.cart, cart)
 
@@ -68,7 +68,7 @@ class CartItemViewSetTest(TestCase):
             password='password',
             role='CUSTOMER'
         )
-        cart = Cart.objects.create(user=customer)
+        cart = Cart.objects.get(user=customer)
         CartItem.objects.create(cart=cart, product=product, quantity=1)
         client = APIClient()
         client.force_authenticate(user=other_customer)

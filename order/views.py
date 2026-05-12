@@ -22,7 +22,7 @@ class OrderViewSet(ModelViewSet):
         if user.role == 'CUSTOMER':
             return Order.objects.filter(user=user)
         if user.role == 'STORE_OWNER':
-            return Order.objects.filter(store__owner=user)
+            return Order.objects.filter(items__product__store__owner=user).distinct()
         return Order.objects.none()
 
     def perform_create(self, serializer):
@@ -36,9 +36,6 @@ class OrderViewSet(ModelViewSet):
         )
         if not cart_items:
             raise ValidationError('Cart is empty')
-        store = serializer.validated_data['store']
-        if any(item.product.store_id != store.id for item in cart_items):
-            raise ValidationError('Cart contains items from a different store')
         with transaction.atomic():
             order = serializer.save(user=user)
             OrderItem.objects.bulk_create([

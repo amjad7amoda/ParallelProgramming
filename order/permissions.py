@@ -14,5 +14,7 @@ class IsOrderAccess(BasePermission):
             if request.user.role == 'CUSTOMER':
                 return obj.user == request.user
             if request.user.role == 'STORE_OWNER':
-                return obj.store.owner == request.user
+                return obj.items.filter(
+                    product__store__owner=request.user
+                ).exists()
         return obj.user == request.user

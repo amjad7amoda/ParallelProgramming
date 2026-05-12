@@ -14,5 +14,5 @@ class IsOrderItemAccess(BasePermission):
             if request.user.role == 'CUSTOMER':
                 return obj.order.user == request.user
             if request.user.role == 'STORE_OWNER':
-                return obj.order.store.owner == request.user
+                return obj.product.store.owner == request.user
         return obj.order.user == request.user

@@ -14,7 +14,5 @@ class CartViewSet(ModelViewSet):
     def get_queryset(self):
         return Cart.objects.filter(user=self.request.user)
 
-    def perform_create(self, serializer):
-        if Cart.objects.filter(user=self.request.user).exists():
-            raise ValidationError('Cart already exists for this user')
-        serializer.save(user=self.request.user)
+    def create(self, request, *args, **kwargs):
+        raise ValidationError('Cart is created automatically for customers')

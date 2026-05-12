@@ -14,7 +14,7 @@ class CartModelTest(TestCase):
             password='password',
             role='CUSTOMER'
         )
-        cart = Cart.objects.create(user=user)
+        cart = Cart.objects.get(user=user)
         self.assertEqual(cart.user, user)
 
 
@@ -28,6 +28,5 @@ class CartViewSetTest(TestCase):
         client = APIClient()
         client.force_authenticate(user=user)
         response = client.post('/api/carts/', {}, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = client.post('/api/carts/', {}, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Cart.objects.filter(user=user).count(), 1)

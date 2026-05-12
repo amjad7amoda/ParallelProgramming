@@ -15,6 +15,7 @@ from .serializers import OrderItemSerializer
 class OrderItemViewSet(ModelViewSet):
     serializer_class = OrderItemSerializer
     permission_classes = [IsAuthenticated, IsOrderItemAccess]
+    http_method_names = ['get', 'post', 'delete', 'head', 'options']
 
     def get_order(self):
         order_id = self.kwargs['order_pk']
@@ -27,8 +28,10 @@ class OrderItemViewSet(ModelViewSet):
             if order.user != user:
                 return OrderItem.objects.none()
         elif user.role == 'STORE_OWNER':
-            if order.store.owner != user:
-                return OrderItem.objects.none()
+            return OrderItem.objects.filter(
+                order=order,
+                product__store__owner=user
+            )
         else:
             return OrderItem.objects.none()
         return OrderItem.objects.filter(order=order)
@@ -38,6 +41,4 @@ class OrderItemViewSet(ModelViewSet):
         if order.user != self.request.user:
             raise ValidationError('Only the order owner can add items')
         product = serializer.validated_data['product']
-        if product.store_id != order.store_id:
-            raise ValidationError('Product must belong to the order store')
         serializer.save(order=order, price=product.price)

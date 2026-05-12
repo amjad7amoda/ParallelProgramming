@@ -16,23 +16,13 @@ from .models import Order
 
 class OrderModelTest(TestCase):
     def test_create_order(self):
-        owner = get_user_model().objects.create_user(
-            username='owner',
-            password='password',
-            role='STORE_OWNER'
-        )
-        store = Store.objects.create(
-            name='Store',
-            description='Test store',
-            owner=owner
-        )
         customer = get_user_model().objects.create_user(
             username='customer',
             password='password',
             role='CUSTOMER'
         )
-        order = Order.objects.create(user=customer, store=store)
-        self.assertEqual(order.store, store)
+        order = Order.objects.create(user=customer)
+        self.assertIsNone(order.store)
 
 
 class OrderViewSetTest(TestCase):
@@ -71,9 +61,35 @@ class OrderViewSetTest(TestCase):
             user=self.customer,
             store=self.store
         )
-        Order.objects.create(
+        self.other_order = Order.objects.create(
             user=self.other_customer,
             store=self.other_store
+        )
+        self.product = Product.objects.create(
+            store=self.store,
+            name='Item',
+            description='Test product',
+            price='10.00',
+            stock=5
+        )
+        self.other_product = Product.objects.create(
+            store=self.other_store,
+            name='Other Item',
+            description='Other product',
+            price='7.50',
+            stock=3
+        )
+        OrderItem.objects.create(
+            order=self.customer_order,
+            product=self.product,
+            quantity=1,
+            price=self.product.price
+        )
+        OrderItem.objects.create(
+            order=self.other_order,
+            product=self.other_product,
+            quantity=1,
+            price=self.other_product.price
         )
 
     def test_customer_only_sees_own_orders(self):
@@ -90,7 +106,7 @@ class OrderViewSetTest(TestCase):
         response = client.get('/api/orders/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.json()), 1)
-        self.assertEqual(response.json()[0]['store'], self.store.id)
+        self.assertEqual(response.json()[0]['id'], self.customer_order.id)
 
     def test_create_order_moves_cart_items_and_clears_cart(self):
         product = Product.objects.create(
@@ -107,7 +123,7 @@ class OrderViewSetTest(TestCase):
             price='7.50',
             stock=3
         )
-        cart = Cart.objects.create(user=self.customer)
+        cart = Cart.objects.get(user=self.customer)
         CartItem.objects.create(cart=cart, product=product, quantity=2)
         CartItem.objects.create(cart=cart, product=other_product, quantity=1)
         client = APIClient()
