@@ -1,3 +1,5 @@
+from django.shortcuts import get_object_or_404
+
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
@@ -14,24 +16,25 @@ class OrderItemViewSet(ModelViewSet):
     serializer_class = OrderItemSerializer
     permission_classes = [IsAuthenticated, IsOrderItemAccess]
 
-    def get_queryset(self):
+    def get_order(self):
         order_id = self.kwargs['order_pk']
+        return get_object_or_404(Order, id=order_id)
+
+    def get_queryset(self):
+        order = self.get_order()
         user = self.request.user
         if user.role == 'CUSTOMER':
-            return OrderItem.objects.filter(
-                order_id=order_id,
-                order__user=user
-            )
+            if order.user != user:
+                return OrderItem.objects.none()
+            return OrderItem.objects.filter(order=order)
         if user.role == 'STORE_OWNER':
-            return OrderItem.objects.filter(
-                order_id=order_id,
-                order__store__owner=user
-            )
+            if order.store.owner != user:
+                return OrderItem.objects.none()
+            return OrderItem.objects.filter(order=order)
         return OrderItem.objects.none()
 
     def perform_create(self, serializer):
-        order_id = self.kwargs['order_pk']
-        order = Order.objects.get(id=order_id)
+        order = self.get_order()
         if order.user != self.request.user:
             raise ValidationError('Only the order owner can add items')
         product = serializer.validated_data['product']
