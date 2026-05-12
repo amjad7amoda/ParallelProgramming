@@ -91,7 +91,7 @@ class OrderItemViewSetTest(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.customer)
 
-    def test_reject_product_from_other_store(self):
+    def test_allow_product_from_other_store(self):
         response = self.client.post(
             f'/api/orders/{self.order.id}/items/',
             {'product': self.other_product.id, 'quantity': 1},
