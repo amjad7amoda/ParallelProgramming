@@ -1,6 +1,9 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 
+from rest_framework import status
+from rest_framework.test import APIClient
+
 from order.models import Order
 from products.models import Product
 from store.models import Store
@@ -39,3 +42,68 @@ class OrderItemModelTest(TestCase):
             price=product.price
         )
         self.assertEqual(item.order, order)
+
+
+class OrderItemViewSetTest(TestCase):
+    def setUp(self):
+        owner = get_user_model().objects.create_user(
+            username='owner',
+            password='password',
+            role='STORE_OWNER'
+        )
+        other_owner = get_user_model().objects.create_user(
+            username='other_owner',
+            password='password',
+            role='STORE_OWNER'
+        )
+        self.store = Store.objects.create(
+            name='Store',
+            description='Test store',
+            owner=owner
+        )
+        self.other_store = Store.objects.create(
+            name='Other Store',
+            description='Other store',
+            owner=other_owner
+        )
+        self.product = Product.objects.create(
+            store=self.store,
+            name='Item',
+            description='Test product',
+            price='12.50',
+            stock=5
+        )
+        self.other_product = Product.objects.create(
+            store=self.other_store,
+            name='Other Item',
+            description='Other product',
+            price='7.25',
+            stock=5
+        )
+        self.customer = get_user_model().objects.create_user(
+            username='customer',
+            password='password',
+            role='CUSTOMER'
+        )
+        self.order = Order.objects.create(user=self.customer, store=self.store)
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.customer)
+
+    def test_reject_product_from_other_store(self):
+        response = self.client.post(
+            f'/api/orders/{self.order.id}/items/',
+            {'product': self.other_product.id, 'quantity': 1},
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_capture_product_price(self):
+        response = self.client.post(
+            f'/api/orders/{self.order.id}/items/',
+            {'product': self.product.id, 'quantity': 2},
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        item = OrderItem.objects.get(order=self.order, product=self.product)
+        self.product.refresh_from_db()
+        self.assertEqual(item.price, self.product.price)
