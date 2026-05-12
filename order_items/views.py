@@ -26,12 +26,12 @@ class OrderItemViewSet(ModelViewSet):
         if user.role == 'CUSTOMER':
             if order.user != user:
                 return OrderItem.objects.none()
-            return OrderItem.objects.filter(order=order)
-        if user.role == 'STORE_OWNER':
+        elif user.role == 'STORE_OWNER':
             if order.store.owner != user:
                 return OrderItem.objects.none()
-            return OrderItem.objects.filter(order=order)
-        return OrderItem.objects.none()
+        else:
+            return OrderItem.objects.none()
+        return OrderItem.objects.filter(order=order)
 
     def perform_create(self, serializer):
         order = self.get_order()

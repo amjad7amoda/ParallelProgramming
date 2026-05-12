@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 
@@ -105,5 +107,4 @@ class OrderItemViewSetTest(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         item = OrderItem.objects.get(order=self.order, product=self.product)
-        self.product.refresh_from_db()
-        self.assertEqual(item.price, self.product.price)
+        self.assertEqual(item.price, Decimal('12.50'))
