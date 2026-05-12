@@ -12,8 +12,6 @@ class CartViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsCustomer, IsCartOwner]
 
     def get_queryset(self):
-        if self.request.user.role != 'CUSTOMER':
-            return Cart.objects.none()
         return Cart.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
