@@ -1,5 +1,12 @@
+from django.db import transaction
+
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError
+
+from cart.models import Cart
+from cart_items.models import CartItem
+from order_items.models import OrderItem
 
 from .models import Order
 from .permissions import IsOrderAccess
@@ -19,4 +26,28 @@ class OrderViewSet(ModelViewSet):
         return Order.objects.none()
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        user = self.request.user
+        cart = Cart.objects.filter(user=user).first()
+        if not cart:
+            raise ValidationError('Cart not found')
+        cart_items = list(
+            CartItem.objects.select_related('product', 'product__store')
+            .filter(cart=cart)
+        )
+        if not cart_items:
+            raise ValidationError('Cart is empty')
+        store = serializer.validated_data['store']
+        if any(item.product.store_id != store.id for item in cart_items):
+            raise ValidationError('Cart contains items from a different store')
+        with transaction.atomic():
+            order = serializer.save(user=user)
+            OrderItem.objects.bulk_create([
+                OrderItem(
+                    order=order,
+                    product=item.product,
+                    quantity=item.quantity,
+                    price=item.product.price
+                )
+                for item in cart_items
+            ])
+            CartItem.objects.filter(cart=cart).delete()
