@@ -54,4 +54,6 @@ class PaymentViewSet(ModelViewSet):
             order.save(update_fields=['status'])
 
         user_email = self.request.user.email
-        generate_and_send_invoice.delay(order.id, user_email)
+        transaction.on_commit(
+            lambda: generate_and_send_invoice.delay(order.id, user_email)
+        )
