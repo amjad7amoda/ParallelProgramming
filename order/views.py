@@ -1,17 +1,23 @@
+from decimal import Decimal
+
 from django.db import transaction, OperationalError
+
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
+from rest_framework import status
+
 from cart.models import Cart
 from cart_items.models import CartItem
 from order_items.models import OrderItem
 from products.models import Product
+from payments.models import Payment
+
 from .models import Order
 from .permissions import IsOrderAccess
 from .serializers import OrderSerializer
-from rest_framework import status
 
 
 class OrderViewSet(ModelViewSet):
@@ -33,8 +39,6 @@ class OrderViewSet(ModelViewSet):
         if not cart:
             raise ValidationError('Cart not found')
 
-        # ✅ FIX 1: Get cart item IDs before the transaction
-        # We only read IDs here (safe), actual product data is read INSIDE the transaction
         cart_item_ids = list(
             CartItem.objects.filter(cart=cart).values_list('id', flat=True)
         )
@@ -43,49 +47,53 @@ class OrderViewSet(ModelViewSet):
 
         try:
             with transaction.atomic():
-                order = serializer.save(user=user)
-                order_items = []
-
-                # ✅ FIX 2: Read cart items INSIDE the transaction
                 cart_items = CartItem.objects.select_related(
                     'product', 'product__store'
                 ).filter(id__in=cart_item_ids)
 
+                total_amount = Decimal('0.00')
+                locked_products = {}
+
                 for item in cart_items:
-                    # ✅ FIX 3: select_for_update(nowait=True)
-                    # Lock this specific product row
-                    # nowait=True → if already locked, raise error immediately
-                    # instead of waiting forever
                     product = Product.objects.select_for_update(
                         nowait=True
                     ).get(id=item.product_id)
 
-                    # ✅ Stock check happens AFTER we have the lock
-                    # so the stock value is guaranteed to be fresh and accurate
                     if item.quantity > product.stock:
                         raise ValidationError(
                             f'Not enough stock for {product.name}. '
                             f'Available: {product.stock}, Requested: {item.quantity}'
                         )
 
-                    product.stock -= item.quantity
+                    total_amount += item.quantity * product.price
+                    locked_products[item.product_id] = (product, item.quantity)
+
+                order = serializer.save(user=user, status=Order.Status.PENDING)
+
+                order_items = []
+                for product, quantity in locked_products.values():
+                    product.stock -= quantity
                     product.save()
 
                     order_items.append(OrderItem(
                         order=order,
                         product=product,
-                        quantity=item.quantity,
+                        quantity=quantity,
                         price=product.price
                     ))
 
                 OrderItem.objects.bulk_create(order_items)
+
+                Payment.objects.create(order=order, amount=total_amount)
+
+                order.status = Order.Status.PAID
+                order.save(update_fields=['status'])
+
                 CartItem.objects.filter(cart=cart).delete()
 
-        # ✅ FIX 4: Handle the case where a product is already locked
-        # by another concurrent request
         except OperationalError:
             raise ValidationError(
-                'Another request is processing this product. '
+                'Another request is processing one of these products. '
                 'Please try again in a moment.'
             )
 
@@ -103,7 +111,6 @@ class OrderViewSet(ModelViewSet):
                 ).filter(order=order)
 
                 for item in order_items:
-                    # ✅ Same fix applied to cancel as well
                     product = Product.objects.select_for_update(
                         nowait=True
                     ).get(id=item.product.id)

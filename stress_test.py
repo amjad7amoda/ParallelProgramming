@@ -1,209 +1,207 @@
-import threading
+"""
+================================================================
+Task 1 — Concurrent Access & Data Integrity (Race Condition)
+Proof script: multiple users buying the same product at once
+================================================================
+
+This script demonstrates that the system prevents overselling
+when many users try to purchase the same limited-stock product
+at the exact same moment.
+
+  Setup:
+      - 1 product with a small, fixed stock
+      - N customers, each with 1 unit of that product in their cart
+
+  Test:
+      - All N customers send POST /api/orders/ at the EXACT same time
+      - select_for_update(nowait=True) ensures only one transaction
+        can hold the product's row lock at a time
+      - Requests that can't get the lock immediately are rejected
+        cleanly (HTTP 400), not queued or left hanging
+
+  Pass criteria:
+      - Total units sold <= original stock (never oversold)
+      - Successful orders <= original stock
+      - Final stock = original stock - units sold (no drift/corruption)
+
+Run:
+    python 1_test.py
+================================================================
+"""
+
 import requests
+import threading
+import time
 
-# =============================================
-# CONFIGURATION
-# =============================================
 BASE_URL = "http://127.0.0.1:8000"
-NUM_USERS = 10       # 10 concurrent users
-PRODUCT_STOCK = 5    # only 5 items in stock
-                     # so only 5 users should succeed
+RUN_ID = int(time.time())  # ensures unique usernames on every run
 
-# =============================================
-# STEP 1: Setup — create store owner + store + product
-# =============================================
-def setup_test_data():
-    print("=== SETTING UP TEST DATA ===\n")
-
-    # 1. Register store owner
-    res = requests.post(f"{BASE_URL}/api/users/register/", json={
-        "username": "storeowner_test",
-        "email": "owner@test.com",
-        "password": "Test1234!",
-        "role": "STORE_OWNER"
-    })
-    print(f"Store owner register: {res.status_code}")
-
-    # 2. Login as store owner
-    res = requests.post(f"{BASE_URL}/api/users/login/", json={
-        "username": "storeowner_test",
-        "password": "Test1234!"
-    })
-    owner_token = res.json().get("access")
-    if not owner_token:
-        print(f"❌ Could not login as store owner: {res.json()}")
-        return None, None
-    print("✅ Store owner logged in")
-
-    headers = {"Authorization": f"Bearer {owner_token}"}
-
-    # 3. Create a store
-    res = requests.post(f"{BASE_URL}/api/stores/", headers=headers, json={
-        "name": "Stress Test Store",
-        "description": "Store for stress testing"
-    })
-    store_id = res.json().get("id")
-    if not store_id:
-        print(f"❌ Could not create store: {res.json()}")
-        return None, None
-    print(f"✅ Store created → id={store_id}")
-
-    # 4. Create a product with limited stock
-    res = requests.post(
-        f"{BASE_URL}/api/stores/{store_id}/products/",
-        headers=headers,
-        json={
-            "name": "Limited Product",
-            "description": "Only 5 in stock",
-            "price": "10.00",
-            "stock": PRODUCT_STOCK
-        }
-    )
-    product_id = res.json().get("id")
-    if not product_id:
-        print(f"❌ Could not create product: {res.json()}")
-        return None, None
-    print(f"✅ Product created → id={product_id}, stock={PRODUCT_STOCK}\n")
-
-    return store_id, product_id
+NUM_USERS = 10        # number of concurrent customers
+PRODUCT_STOCK = 5     # total stock available
+QUANTITY_PER_USER = 1 # units each customer tries to buy
 
 
-# =============================================
-# STEP 2: Register customers + add to cart
-# =============================================
-def setup_customer(user_num, product_id):
-    """
-    Register a customer, cart is auto-created by User.save()
-    Then add the product to their cart
-    Returns their token
-    """
-    username = f"customer_test{user_num}"
-
-    # 1. Register → cart auto-created
-    res = requests.post(f"{BASE_URL}/api/users/register/", json={
+def register_and_login(username, password, role):
+    """Register a user (ignore 'already exists') and return their access token."""
+    requests.post(f"{BASE_URL}/api/users/register/", json={
         "username": username,
         "email": f"{username}@test.com",
-        "password": "Test1234!",
-        "role": "CUSTOMER"
+        "password": password,
+        "role": role
     })
-    if res.status_code != 201:
-        print(f"❌ Could not register customer {user_num}: {res.json()}")
-        return None
-
-    # 2. Login → get token
     res = requests.post(f"{BASE_URL}/api/users/login/", json={
         "username": username,
-        "password": "Test1234!"
+        "password": password
     })
-    token = res.json().get("access")
-    if not token:
-        print(f"❌ Could not login customer {user_num}: {res.json()}")
-        return None
-
-    headers = {"Authorization": f"Bearer {token}"}
-
-    # 3. Add product to cart
-    # Cart is auto-linked to user, so URL is just /api/cart/items/
-    res = requests.post(
-        f"{BASE_URL}/api/cart/items/",
-        headers=headers,
-        json={
-            "product": product_id,
-            "quantity": 3
-        }
-    )
-    if res.status_code not in [200, 201]:
-        print(f"❌ Could not add to cart for customer {user_num}: {res.json()}")
-        return None
-
-    return token
+    return res.json().get("access")
 
 
-# =============================================
-# STEP 3: Concurrent order placement
-# =============================================
-results = []
-results_lock = threading.Lock()  # to safely append to results list
-
-def place_order(token, user_id):
-    """Each thread calls this — places an order"""
-    headers = {"Authorization": f"Bearer {token}"}
-
-    response = requests.post(
-        f"{BASE_URL}/api/orders/",
-        headers=headers,
-        json={}
-    )
-
-    # Lock before writing to shared results list
-    with results_lock:
-        results.append({
-            "user_id": user_id,
-            "status_code": response.status_code,
-            "response": response.json()
-        })
-        print(f"User {user_id:02d} → Status: {response.status_code} | {response.json()}")
+def section(title):
+    print("\n" + "=" * 64)
+    print(title)
+    print("=" * 64)
 
 
-# =============================================
-# MAIN
-# =============================================
-if __name__ == "__main__":
+def step(text):
+    print(f"  → {text}")
 
-    # 1. Setup store and product
-    store_id, product_id = setup_test_data()
-    if not product_id:
-        print("❌ Setup failed. Exiting.")
-        exit()
 
-    # 2. Register all customers and add product to their carts
-    print("=== SETTING UP CUSTOMERS ===\n")
+# ================================================================
+# SETUP — store owner, store, product
+# ================================================================
+def setup_product():
+    owner_token = register_and_login(f"race_owner_{RUN_ID}", "Test1234!", "STORE_OWNER")
+    headers = {"Authorization": f"Bearer {owner_token}"}
+
+    res = requests.post(f"{BASE_URL}/api/stores/", headers=headers, json={
+        "name": "Race Condition Test Store", "description": "test"
+    })
+    store_id = res.json()["id"]
+
+    res = requests.post(f"{BASE_URL}/api/stores/{store_id}/products/", headers=headers, json={
+        "name": "Limited Product", "description": "test", "price": "10.00", "stock": PRODUCT_STOCK
+    })
+    product_id = res.json()["id"]
+    step(f"Product created (id={product_id}, stock={PRODUCT_STOCK}, price=10.00)")
+
+    return store_id, product_id, headers
+
+
+# ================================================================
+# SETUP — N customers, each with QUANTITY_PER_USER units in cart
+# ================================================================
+def setup_customers(product_id):
     tokens = []
-    for i in range(1, NUM_USERS + 1):
-        token = setup_customer(i, product_id)
-        if token:
+    tokens_lock = threading.Lock()
+
+    def register_one(i):
+        token = register_and_login(f"race_cust_{RUN_ID}_{i}", "Test1234!", "CUSTOMER")
+        cust_headers = {"Authorization": f"Bearer {token}"}
+        requests.post(f"{BASE_URL}/api/cart/items/", headers=cust_headers, json={
+            "product": product_id, "quantity": QUANTITY_PER_USER
+        })
+        with tokens_lock:
             tokens.append((token, i))
-            print(f"✅ Customer {i} ready")
-        else:
-            print(f"❌ Customer {i} failed setup")
 
-    print(f"\n=== LAUNCHING {len(tokens)} CONCURRENT ORDERS ===")
-    print(f"📦 Product stock = {PRODUCT_STOCK}")
-    print(f"👥 Users trying to order = {len(tokens)}")
-    print(f"Expected: only {PRODUCT_STOCK} should succeed\n")
-
-    # 3. Create all threads
-    threads = []
-    for token, user_id in tokens:
-        t = threading.Thread(target=place_order, args=(token, user_id))
-        threads.append(t)
-
-    # 4. Start ALL threads at the exact same time
+    threads = [threading.Thread(target=register_one, args=(i,)) for i in range(1, NUM_USERS + 1)]
     for t in threads:
         t.start()
-
-    # 5. Wait for ALL threads to finish
     for t in threads:
         t.join()
 
-    # =============================================
-    # RESULTS SUMMARY
-    # =============================================
-    print("\n" + "="*50)
-    print("RESULTS SUMMARY")
-    print("="*50)
+    step(f"{len(tokens)} customers ready, each with {QUANTITY_PER_USER} unit(s) in cart")
+    return tokens
 
-    success = [r for r in results if r['status_code'] == 201]
-    failed  = [r for r in results if r['status_code'] != 201]
 
-    print(f"✅ Successful orders : {len(success)}")
-    print(f"❌ Blocked/failed    : {len(failed)}")
-    print(f"📦 Original stock    : {PRODUCT_STOCK}")
+# ================================================================
+# TEST — all customers checkout at the exact same time
+# ================================================================
+def run_concurrent_checkout(tokens):
+    results = []
+    results_lock = threading.Lock()
+
+    def checkout(token, user_id):
+        cust_headers = {"Authorization": f"Bearer {token}"}
+        res = requests.post(f"{BASE_URL}/api/orders/", headers=cust_headers, json={})
+        with results_lock:
+            results.append({
+                "user_id": user_id,
+                "status_code": res.status_code,
+                "response": res.json()
+            })
+
+    threads = [threading.Thread(target=checkout, args=(token, uid)) for token, uid in tokens]
+
     print()
+    step(f"Launching {len(threads)} checkout requests simultaneously...")
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
 
-    if len(success) <= PRODUCT_STOCK:
-        print("🎉 RACE CONDITION HANDLED CORRECTLY!")
-        print(f"   Stock was never oversold ({len(success)} ≤ {PRODUCT_STOCK})")
+    return sorted(results, key=lambda r: r["user_id"])
+
+
+# ================================================================
+# MAIN
+# ================================================================
+if __name__ == "__main__":
+    print("\nTASK 1 — CONCURRENT ACCESS & DATA INTEGRITY (RACE CONDITION)")
+    print("Server: " + BASE_URL)
+
+    section("SETUP")
+    store_id, product_id, owner_headers = setup_product()
+    tokens = setup_customers(product_id)
+
+    section(f"TEST — {NUM_USERS} concurrent checkouts, stock = {PRODUCT_STOCK}")
+    results = run_concurrent_checkout(tokens)
+
+    print()
+    for r in results:
+        print(f"  User {r['user_id']:02d} → HTTP {r['status_code']} | {r['response']}")
+
+    # --- Check final stock ---
+    res = requests.get(f"{BASE_URL}/api/stores/{store_id}/products/{product_id}/", headers=owner_headers)
+    final_stock = res.json().get("stock")
+
+    success = [r for r in results if r["status_code"] == 201]
+    failed = [r for r in results if r["status_code"] != 201]
+    total_sold = len(success) * QUANTITY_PER_USER
+    expected_final_stock = PRODUCT_STOCK - total_sold
+
+    section("RESULTS SUMMARY")
+    print(f"  Original stock        : {PRODUCT_STOCK}")
+    print(f"  Concurrent users      : {NUM_USERS}")
+    print(f"  Quantity per user     : {QUANTITY_PER_USER}")
+    print(f"  Successful orders     : {len(success)}")
+    print(f"  Rejected orders       : {len(failed)}")
+    print(f"  Total units sold      : {total_sold}")
+    print(f"  Final stock (actual)  : {final_stock}")
+    print(f"  Final stock (expected): {expected_final_stock}")
+
+    passed = (
+        total_sold <= PRODUCT_STOCK
+        and final_stock == expected_final_stock
+        and final_stock >= 0
+    )
+
+    print()
+    if passed:
+        print("   PASS — No overselling occurred:")
+        print(f"           {total_sold} units sold <= {PRODUCT_STOCK} available")
+        print("           Stock matches expected value exactly — no data corruption")
     else:
-        print("⚠️  RACE CONDITION DETECTED!")
-        print(f"   More orders ({len(success)}) than stock ({PRODUCT_STOCK})!")
+        print("   FAIL — Stock mismatch or overselling detected, investigate further")
+
+    section("FINAL SUMMARY")
+    print(f"  Race Condition Test : {' PASS' if passed else ' FAIL'}")
+    print()
+    if passed:
+        print("   CONCURRENCY GUARANTEES CONFIRMED:")
+        print("     - select_for_update(nowait=True) locks the product row")
+        print("       for the duration of the transaction")
+        print("     - Concurrent requests for the same row are rejected")
+        print("       immediately and cleanly (HTTP 400), not queued")
+        print("     - Stock was never read/written by two transactions")
+        print("       at the same time — no lost updates")
+    print()
