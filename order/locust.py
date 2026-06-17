@@ -137,7 +137,6 @@ class LockContentionUser(HttpUser):
         )
         res.raise_for_status()
 
-    # في locust — سجّل كل الأخطاء بتفصيل
     @task(3)
     def create_order(self):
         self.add_to_cart()
@@ -173,7 +172,7 @@ class LockContentionUser(HttpUser):
             return
 
         order_id = self.order_id
-        self.order_id = None  # امسحه فوراً قبل الـ request لمنع double cancel
+        self.order_id = None
 
         with self.client.post(
             f"/api/orders/{order_id}/cancel/",
@@ -188,13 +187,9 @@ class LockContentionUser(HttpUser):
                 body = _safe_json(res)
                 reason = _error_text(body).lower()
 
-                if _is_expected_cancel_contention(reason):
-                    res.success()  # expected under concurrent cancel/load contention
+                if "locked" in reason:
+                    res.failure(f"LOCK BLOCKED — {body}") 
                 elif "already cancelled" in reason:
-                    res.success()  # متوقع من التيست نفسه، مش bug
-                elif "locked" in reason:
-                    res.failure(f"LOCK BLOCKED — {body}")
+                    res.success()
                 else:
                     res.failure(f"Unexpected 400: {body}")
-            else:
-                res.failure(f"Unexpected {res.status_code}: {res.text}")

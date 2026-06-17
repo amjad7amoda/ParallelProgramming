@@ -47,33 +47,26 @@ class OrderViewSet(ModelViewSet):
             .values_list('product_id', flat=True)
             .distinct()
         )
-        # مفتاح موحد يغطي كل المنتجات في نفس الطلب
+
         try:
             with distributed_lock(product_ids, timeout=10):
                 with transaction.atomic():
-                    order = serializer.save(user=user)
+                    order = serializer.save(user=user) 
                     order_items = []
 
                     cart_items = CartItem.objects.select_related(
                         'product', 'product__store'
                     ).filter(id__in=cart_item_ids)
 
-                    order = serializer.save(user=user)
-
                     locked_products = {
                         p.id: p
-                        for p in Product.objects.select_for_update()
+                        for p in Product.objects.select_for_update(nowait=True)
                         .filter(id__in=product_ids)
-                        .order_by('id')  # ترتيب ثابت = no deadlock
+                        .order_by('id')
                     }
 
                     for item in cart_items:
-                        product = Product.objects.select_for_update(
-                            nowait=True
-                        ).get(id=item.product_id)
-
-                        # product = Product.objects.get(id=item.product_id)
-
+                        product = locked_products[item.product_id] 
                         if item.quantity > product.stock:
                             raise ValidationError(
                                 f'Not enough stock for {product.name}. '
@@ -89,13 +82,13 @@ class OrderViewSet(ModelViewSet):
                             quantity=item.quantity,
                             price=product.price
                         ))
+
                     transaction.on_commit(
-                                lambda: (
-                                    send_order_email.delay(user.email, order.id)
-                                )
-                            )
+                        lambda: send_order_email.delay(user.email, order.id)
+                    )
                     OrderItem.objects.bulk_create(order_items)
                     CartItem.objects.filter(cart=cart).delete()
+                    
         except DistributedLockError:
             raise ValidationError('Product is locked')
         except OperationalError:

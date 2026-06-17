@@ -14,8 +14,8 @@ class DistributedLockError(Exception):
 @contextmanager
 def distributed_lock(resource_ids: list[str], timeout: int = 10):
     lock_keys = {f'lock:product:{rid}': str(uuid.uuid4()) for rid in sorted(resource_ids)}
-
     acquired = []
+    
     try:
         for lock_key, lock_id in lock_keys.items():
             if not r.set(lock_key, lock_id, nx=True, ex=timeout):
