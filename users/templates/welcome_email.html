@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #f4f4f4;
+            padding: 30px;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .title {
+            color: #2563eb;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .info {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="title">
+        Welcome to Ecommerce 🎉
+    </div>
+
+    <div class="info">
+        Hello {{ username }},
+    </div>
+
+    <div class="info">
+        Your account has been created successfully.
+    </div>
+
+    <div class="info">
+        Registered Email:
+        <strong>{{ email }}</strong>
+    </div>
+
+</div>
+
+</body>
+</html>

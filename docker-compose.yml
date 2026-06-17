@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ecommerce
+      POSTGRES_USER: ecommerce
+      POSTGRES_PASSWORD: ecommerce
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    environment:
+      DJANGO_DEBUG: "False"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,web,nginx
+      DJANGO_SECRET_KEY: change-me-for-production
+      DJANGO_DB_ENGINE: django.db.backends.postgresql
+      DJANGO_DB_NAME: ecommerce
+      DJANGO_DB_USER: ecommerce
+      DJANGO_DB_PASSWORD: ecommerce
+      DJANGO_DB_HOST: db
+      DJANGO_DB_PORT: 5432
+    depends_on:
+      - db
+    command: sh -c "python manage.py migrate --noinput && gunicorn ecommerce.wsgi:application --bind 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  celery:
+    build: .
+    command: celery -A ecommerce worker -l info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - web
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+volumes:
+  postgres_data:

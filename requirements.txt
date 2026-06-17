@@ -1,0 +1,7 @@
+Django>=6.0,<7.0
+djangorestframework>=3.16,<4.0
+djangorestframework-simplejwt>=5.5,<6.0
+drf-nested-routers>=0.95,<1.0
+gunicorn>=23.0,<24.0
+psycopg2-binary>=2.9,<3.0
+locust>=2.40,<3.0

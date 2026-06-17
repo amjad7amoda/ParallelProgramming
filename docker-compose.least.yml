@@ -1,0 +1,77 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ecommerce
+      POSTGRES_USER: ecommerce
+      POSTGRES_PASSWORD: ecommerce
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web1:
+    build: .
+    environment:
+      BACKEND_ID: app-1
+      DEMO_SLEEP_SECONDS: '0.05'
+      DJANGO_DEBUG: "False"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,web1,web2,web3,nginx
+      DJANGO_SECRET_KEY: change-me-for-production
+      DJANGO_DB_ENGINE: django.db.backends.postgresql
+      DJANGO_DB_NAME: ecommerce
+      DJANGO_DB_USER: ecommerce
+      DJANGO_DB_PASSWORD: ecommerce
+      DJANGO_DB_HOST: db
+      DJANGO_DB_PORT: 5432
+    depends_on:
+      - db
+    command: sh -c "python manage.py migrate --noinput && gunicorn ecommerce.wsgi:application --bind 0.0.0.0:8000" --workers 4
+
+  web2:
+    build: .
+    environment:
+      BACKEND_ID: app-2
+      DEMO_SLEEP_SECONDS: '0.05'
+      DJANGO_DEBUG: "False"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,web1,web2,web3,nginx
+      DJANGO_SECRET_KEY: change-me-for-production
+      DJANGO_DB_ENGINE: django.db.backends.postgresql
+      DJANGO_DB_NAME: ecommerce
+      DJANGO_DB_USER: ecommerce
+      DJANGO_DB_PASSWORD: ecommerce
+      DJANGO_DB_HOST: db
+      DJANGO_DB_PORT: 5432
+    depends_on:
+      - db
+    command: gunicorn ecommerce.wsgi:application --bind 0.0.0.0:8000 --workers 4
+
+  web3:
+    build: .
+    environment:
+      BACKEND_ID: app-3
+      DEMO_SLEEP_SECONDS: '0.05'
+      DJANGO_DEBUG: "False"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,web1,web2,web3,nginx
+      DJANGO_SECRET_KEY: change-me-for-production
+      DJANGO_DB_ENGINE: django.db.backends.postgresql
+      DJANGO_DB_NAME: ecommerce
+      DJANGO_DB_USER: ecommerce
+      DJANGO_DB_PASSWORD: ecommerce
+      DJANGO_DB_HOST: db
+      DJANGO_DB_PORT: 5432
+    depends_on:
+      - db
+    command: gunicorn ecommerce.wsgi:application --bind 0.0.0.0:8000 --workers 4
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - web1
+      - web2
+      - web3
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/least-connections.conf:/etc/nginx/nginx.conf:ro
+
+volumes:
+  postgres_data:

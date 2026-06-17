@@ -1,0 +1,26 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+djangorestframework = "*"
+djangorestframework-simplejwt = "*"
+drf-nested-routers = "*"
+psycopg2 = "*"
+psycopg = "*"
+mysqlclient = "*"
+celery = "*"
+djangorestframework-stubs = "*"
+celery-types = "*"
+weasyprint = "*"
+xhtml2pdf = "*"
+django = "*"
+rest-framework-simplejwt = "*"
+redis = "*"
+
+[dev-packages]
+locust = "*"
+
+[requires]
+python_version = "3.14"

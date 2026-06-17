@@ -1,0 +1,95 @@
+*** This doc is for daily sales batch processing.
+
+
+Description:
+  
+  * Our batch processing follows the ETL model:
+    Extract:
+      Read paid order items from the db where:
+      - order.status = PAID
+      - payment.status = COMPLETED
+      - payment.created_at is on the selected date
+    Transform:
+      Split order items into fixed-size chunks.
+      Calculate sales totals using separate workers.
+      Each worker calculates product-level and store-level partial totals.
+    Load:
+      Write the final sales report as a JSON file.
+  
+  * It is done manually on a daily basis.
+
+  * We try to mimic the work of servers when processing chunks but instead of actual
+    servers we use threads.
+  
+  * DeadLetter support:
+    If a record fails during processing, it is skipped and written to deadLetter
+    instead of stopping the whole batch.
+
+
+
+Example commands:
+
+  * Command help:
+    - pipenv run python manage.py help process_daily_sales
+
+  * Run the daily batch job with one command as instructed in the following:
+    - For today’s sales:
+      pipenv run python manage.py process_daily_sales --chunk-size 10 --workers 4
+    - For a specific date:
+      pipenv run python manage.py process_daily_sales --date 2026-05-17 --chunk-size 10 --workers 4
+
+  * It creates a report file here:
+    .\batch_reports\daily_sales_2026-05-17.json
+
+
+
+Testing:
+
+  * Command help:
+    - pipenv run python manage.py help test_daily_sales_batch
+
+  * Run this to generate test data and verify the batch job:
+    - pipenv run python manage.py test_daily_sales_batch --orders 40 --chunk-size 10 --workers 4
+
+  * The test uses date 2099-01-01 by default to avoid mixing test data with real
+    daily sales. It creates:
+    - one store owner
+    - one customer
+    - one store
+    - three products
+    - paid orders
+    - order items
+    - completed payments
+
+  * Then it runs the batch report and checks the product totals.
+
+
+
+Report fields:
+
+  - date
+  - workers
+  - chunk_size
+  - total_order_items_found
+  - successful_order_items
+  - failed_order_items
+  - total_chunks
+  - duration_ms
+  - records_per_second
+  - chunks
+  - products
+  - stores
+  - deadLetter
+
+
+
+*** Testing demo:
+
+  Generate test data:
+  pipenv run python manage.py test_daily_sales_batch --date 2099-04-01 --orders 500 --chunk-size 50 --workers 4 --skip-dead-letter-demo
+
+  Run with 1 worker:
+  pipenv run python manage.py process_daily_sales --date 2099-04-01 --chunk-size 50 --workers 1 --output batch_reports\demo_1_worker.json
+
+  Run with 4 workers:
+  pipenv run python manage.py process_daily_sales --date 2099-04-01 --chunk-size 50 --workers 4 --output batch_reports\demo_4_workers.json
