@@ -16,10 +16,12 @@ class ProductViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsProductStoreOwner]
     http_method_names = ['get', 'post', 'put', 'patch', 'delete']
 
+    #def get_queryset(self):
+    #    store_id = self.kwargs['store_pk']
+    #    return Product.objects.filter(store_id=store_id)
     def get_queryset(self):
         store_id = self.kwargs['store_pk']
-        return Product.objects.filter(store_id=store_id)
-
+        return Product.objects.filter(store_id=store_id).select_related('store')
     def perform_create(self, serializer):
         store_id = self.kwargs['store_pk']
         store = Store.objects.get(id=store_id)
