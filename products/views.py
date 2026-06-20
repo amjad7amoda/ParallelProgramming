@@ -16,6 +16,11 @@ class ProductViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsProductStoreOwner]
     http_method_names = ['get', 'post', 'put', 'patch', 'delete']
 
+    def get_permissions(self):
+        if self.action in ('increment_view', 'increment_like'):
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
     #def get_queryset(self):
     #    store_id = self.kwargs['store_pk']
     #    return Product.objects.filter(store_id=store_id)

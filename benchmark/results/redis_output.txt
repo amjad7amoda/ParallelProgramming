@@ -1,0 +1,33 @@
+
+############################################################
+#  CACHE TEST — Mode: redis
+############################################################
+  Creating test data...
+  Store 1, Products: [1, 2, 3]
+
+  --- Product List ---
+  list (cold, first hit)                         avg=   13.02ms  best=   12.36ms  worst=   13.44ms
+  list (warm, cached)                            avg=   13.86ms  best=   12.34ms  worst=   16.86ms
+
+  --- Product Detail ---
+  detail (cold, first hit)                       avg=   13.35ms  best=   11.41ms  worst=   16.56ms
+  detail (warm, cached)                          avg=   13.02ms  best=    9.63ms  worst=   14.92ms
+
+  --- Counters ---
+  increment_view                                 avg=   12.91ms  best=   10.98ms  worst=   14.51ms
+  increment_like                                 avg=   12.97ms  best=    9.56ms  worst=   14.65ms
+
+============================================================
+  SUMMARY — Mode: redis
+============================================================
+  Test                            Avg(ms) Best(ms) Worst(ms)
+  ------------------------------ -------- -------- --------
+  list_cold                         13.02    12.36    13.44
+  list_warm                         13.86    12.34    16.86
+  detail_cold                       13.35    11.41    16.56
+  detail_warm                       13.02     9.63    14.92
+  increment_view                    12.91    10.98    14.51
+  increment_like                    12.97     9.56    14.65
+  ------------------------------ -------- -------- --------
+  OVERALL AVERAGE                   13.19ms
+

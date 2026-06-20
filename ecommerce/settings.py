@@ -141,6 +141,32 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 AUTH_USER_MODEL = 'users.User'
 
+# Use Redis cache unless NO_REDIS environment variable is set
+USE_REDIS = os.getenv('NO_REDIS', 'false').lower() not in {'1', 'true', 'yes', 'on'}
+
+REDIS_LOCATION = os.getenv('REDIS_LOCATION', 'redis://redis:6379/1')
+
+if USE_REDIS:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_LOCATION,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            }
+        }
+    }
+    SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+    SESSION_CACHE_ALIAS = "default"
+else:
+    # Use dummy cache for performance testing without Redis
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+        }
+    }
+    SESSION_ENGINE = "django.contrib.sessions.backends.db"
+    SESSION_CACHE_ALIAS = "default"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
