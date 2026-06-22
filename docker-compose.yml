@@ -10,6 +10,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
   web:
     build: .
     environment:
@@ -24,6 +29,7 @@ services:
       DJANGO_DB_PORT: 5432
     depends_on:
       - db
+      - redis
     command: sh -c "python manage.py migrate --noinput && gunicorn ecommerce.wsgi:application --bind 0.0.0.0:8000"
     ports:
       - "8000:8000"

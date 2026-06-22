@@ -94,9 +94,9 @@ DB_ENGINE = os.getenv('DJANGO_DB_ENGINE', 'django.db.backends.sqlite3')
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ecommerce_db',
+        'NAME': 'Ecommerce',
         'USER': 'postgres',
-        'PASSWORD': '1234',   
+        'PASSWORD': 'password',   
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -189,9 +189,16 @@ REDIS_URL = 'redis://localhost:6379/0'
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'ahamoda161@gmail.com'
-EMAIL_HOST_PASSWORD = 'pyinbdgxjvrgxgqf'
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = 'bosssyria16@gmail.com'
+EMAIL_HOST_PASSWORD = 'hurhvfmysiydamme'
+
+
+if DEBUG:
+    PASSWORD_HASHERS = [
+        'django.contrib.auth.hashers.MD5PasswordHasher',
+    ]

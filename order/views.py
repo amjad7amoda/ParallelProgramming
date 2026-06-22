@@ -7,7 +7,7 @@ from rest_framework.decorators import action
 from cart.models import Cart
 from cart_items.models import CartItem
 from order.locks import DistributedLockError, distributed_lock
-from order.tasks import send_order_email
+from order.tasks import send_order, send_order_email
 from order_items.models import OrderItem
 from products.models import Product
 from .models import Order
