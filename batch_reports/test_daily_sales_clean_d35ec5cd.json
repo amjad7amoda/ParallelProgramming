@@ -1,0 +1,193 @@
+{
+  "date": "2099-04-01",
+  "workers": 4,
+  "chunk_size": 50,
+  "total_order_items_found": 1000,
+  "successful_order_items": 1000,
+  "failed_order_items": 0,
+  "total_chunks": 20,
+  "duration_ms": 326.17,
+  "records_per_second": 3065.89,
+  "chunks": [
+    {
+      "chunk": 1,
+      "worker": "batch-worker_0",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 42.81
+    },
+    {
+      "chunk": 2,
+      "worker": "batch-worker_1",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 44.42
+    },
+    {
+      "chunk": 3,
+      "worker": "batch-worker_2",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 45.46
+    },
+    {
+      "chunk": 4,
+      "worker": "batch-worker_3",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 46.74
+    },
+    {
+      "chunk": 5,
+      "worker": "batch-worker_0",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 40.74
+    },
+    {
+      "chunk": 6,
+      "worker": "batch-worker_1",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 41.15
+    },
+    {
+      "chunk": 7,
+      "worker": "batch-worker_2",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 41.13
+    },
+    {
+      "chunk": 8,
+      "worker": "batch-worker_3",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 41.94
+    },
+    {
+      "chunk": 9,
+      "worker": "batch-worker_0",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 39.03
+    },
+    {
+      "chunk": 10,
+      "worker": "batch-worker_1",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 39.99
+    },
+    {
+      "chunk": 11,
+      "worker": "batch-worker_2",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 40.56
+    },
+    {
+      "chunk": 12,
+      "worker": "batch-worker_3",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 42.08
+    },
+    {
+      "chunk": 13,
+      "worker": "batch-worker_0",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 41.67
+    },
+    {
+      "chunk": 14,
+      "worker": "batch-worker_1",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 42.45
+    },
+    {
+      "chunk": 15,
+      "worker": "batch-worker_2",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 41.93
+    },
+    {
+      "chunk": 16,
+      "worker": "batch-worker_3",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 43.2
+    },
+    {
+      "chunk": 17,
+      "worker": "batch-worker_0",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 41.07
+    },
+    {
+      "chunk": 18,
+      "worker": "batch-worker_1",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 39.55
+    },
+    {
+      "chunk": 19,
+      "worker": "batch-worker_2",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 140.27
+    },
+    {
+      "chunk": 20,
+      "worker": "batch-worker_3",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 38.62
+    }
+  ],
+  "products": [
+    {
+      "product_id": 22,
+      "product_name": "P1_d35ec5cd",
+      "store_id": 3,
+      "quantity_sold": 833,
+      "gross_revenue": "8330.00",
+      "order_count": 333
+    },
+    {
+      "product_id": 23,
+      "product_name": "P2_d35ec5cd",
+      "store_id": 3,
+      "quantity_sold": 835,
+      "gross_revenue": "12525.00",
+      "order_count": 334
+    },
+    {
+      "product_id": 24,
+      "product_name": "P3_d35ec5cd",
+      "store_id": 3,
+      "quantity_sold": 832,
+      "gross_revenue": "20800.00",
+      "order_count": 333
+    }
+  ],
+  "stores": [
+    {
+      "store_id": 3,
+      "store_name": "Batch Store d35ec5cd",
+      "total_orders": 500,
+      "total_items_sold": 2500,
+      "gross_revenue": "41655.00"
+    }
+  ],
+  "deadLetter": {
+    "count": 0,
+    "strategy": "skip_failed_records_and_continue",
+    "items": []
+  }
+}

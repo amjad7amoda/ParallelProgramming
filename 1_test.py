@@ -122,7 +122,6 @@ def setup_customers(product_id):
 def run_concurrent_checkout(tokens):
     results = []
     results_lock = threading.Lock()
-
     def checkout(token, user_id):
         cust_headers = {"Authorization": f"Bearer {token}"}
         res = requests.post(

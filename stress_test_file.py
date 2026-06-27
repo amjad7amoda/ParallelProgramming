@@ -1,19 +1,3 @@
-"""
-locustfile.py
-شغل السكريبت بـ:
-    locust -f locustfile.py --host=http://127.0.0.1:8000
-
-بعدها افتح المتصفح على:
-    http://localhost:8089
-
-وحدد:
-    Number of users: 100
-    Ramp up: 10 (أو أي رقم بدك)
-
-ملاحظة: لازم تشغل seed_stress_data.py مرة واحدة قبل تشغيل هذا السكريبت
-عشان يكون عندك 100 يوزر (loadtest_user_0 .. loadtest_user_99) جاهزين.
-"""
-
 import random
 import threading
 
@@ -96,7 +80,6 @@ class EcommerceUser(HttpUser):
                 results = data["results"] if isinstance(data, dict) else data
                 self.product_ids = [p["id"] for p in results]
 
-    # ------------------- Tasks -------------------
 
     @task(5)
     def browse_products(self):
@@ -139,7 +122,6 @@ class EcommerceUser(HttpUser):
             return
 
         try:
-            # 1. أضف منتج للسلة
             product_id = random.choice(self.product_ids)
             add_resp = self.client.post(
                 "/api/cart/items/",
@@ -150,7 +132,6 @@ class EcommerceUser(HttpUser):
             if add_resp.status_code not in (200, 201):
                 return
 
-            # 2. عمل الأوردر
             with self.client.post(
                 "/api/orders/",
                 json={},
@@ -171,7 +152,6 @@ class EcommerceUser(HttpUser):
                     return
                 resp.success()
 
-            # 3. الدفع
             with self.client.post(
                 f"/api/orders/{order_id}/payment/",
                 json={},

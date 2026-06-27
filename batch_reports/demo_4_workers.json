@@ -1,0 +1,193 @@
+{
+  "date": "2099-04-01",
+  "workers": 4,
+  "chunk_size": 50,
+  "total_order_items_found": 1000,
+  "successful_order_items": 1000,
+  "failed_order_items": 0,
+  "total_chunks": 20,
+  "duration_ms": 294.22,
+  "records_per_second": 3398.82,
+  "chunks": [
+    {
+      "chunk": 1,
+      "worker": "batch-worker_0",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 51.17
+    },
+    {
+      "chunk": 2,
+      "worker": "batch-worker_1",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 48.42
+    },
+    {
+      "chunk": 3,
+      "worker": "batch-worker_2",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 49.87
+    },
+    {
+      "chunk": 4,
+      "worker": "batch-worker_3",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 154.43
+    },
+    {
+      "chunk": 5,
+      "worker": "batch-worker_1",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 36.53
+    },
+    {
+      "chunk": 6,
+      "worker": "batch-worker_0",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 46.12
+    },
+    {
+      "chunk": 7,
+      "worker": "batch-worker_2",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 46.16
+    },
+    {
+      "chunk": 8,
+      "worker": "batch-worker_1",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 37.46
+    },
+    {
+      "chunk": 9,
+      "worker": "batch-worker_0",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 38.59
+    },
+    {
+      "chunk": 10,
+      "worker": "batch-worker_2",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 43.19
+    },
+    {
+      "chunk": 11,
+      "worker": "batch-worker_1",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 37.67
+    },
+    {
+      "chunk": 12,
+      "worker": "batch-worker_0",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 38.03
+    },
+    {
+      "chunk": 13,
+      "worker": "batch-worker_2",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 37.82
+    },
+    {
+      "chunk": 14,
+      "worker": "batch-worker_3",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 39.63
+    },
+    {
+      "chunk": 15,
+      "worker": "batch-worker_1",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 38.83
+    },
+    {
+      "chunk": 16,
+      "worker": "batch-worker_0",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 42.47
+    },
+    {
+      "chunk": 17,
+      "worker": "batch-worker_2",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 41.69
+    },
+    {
+      "chunk": 18,
+      "worker": "batch-worker_3",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 38.8
+    },
+    {
+      "chunk": 19,
+      "worker": "batch-worker_1",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 39.5
+    },
+    {
+      "chunk": 20,
+      "worker": "batch-worker_0",
+      "records": 50,
+      "failed_records": 0,
+      "duration_ms": 35.98
+    }
+  ],
+  "products": [
+    {
+      "product_id": 1,
+      "product_name": "P1_c843982d",
+      "store_id": 1,
+      "quantity_sold": 833,
+      "gross_revenue": "8330.00",
+      "order_count": 333
+    },
+    {
+      "product_id": 2,
+      "product_name": "P2_c843982d",
+      "store_id": 1,
+      "quantity_sold": 835,
+      "gross_revenue": "12525.00",
+      "order_count": 334
+    },
+    {
+      "product_id": 3,
+      "product_name": "P3_c843982d",
+      "store_id": 1,
+      "quantity_sold": 832,
+      "gross_revenue": "20800.00",
+      "order_count": 333
+    }
+  ],
+  "stores": [
+    {
+      "store_id": 1,
+      "store_name": "Batch Store c843982d",
+      "total_orders": 500,
+      "total_items_sold": 2500,
+      "gross_revenue": "41655.00"
+    }
+  ],
+  "deadLetter": {
+    "count": 0,
+    "strategy": "skip_failed_records_and_continue",
+    "items": []
+  }
+}
